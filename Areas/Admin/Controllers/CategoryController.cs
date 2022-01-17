@@ -1,4 +1,5 @@
 ﻿using BulkyBook.Data;
+using BulkyBook.Data.Repository.IRepository;
 using BulkyBook.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -7,16 +8,16 @@ namespace BulkyBook.Controllers
 {
     public class CategoryController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IUnitOfWork _context;
 
-        public CategoryController(ApplicationDbContext context)
+        public CategoryController(IUnitOfWork context)
         {
             _context = context;
         }
 
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
-            var objList = await _context.Categories.ToListAsync();
+            var objList = _context.Category.GetAll();
             return View(objList);
         }
 
@@ -35,8 +36,8 @@ namespace BulkyBook.Controllers
         {
             if (ModelState.IsValid)
             {
-                _context.Categories.Add(obj);
-                _context.SaveChanges();
+                _context.Category.Add(obj);
+                _context.Save();
                 TempData["success"] = "Category created";
                 return RedirectToAction("Index", "Category");
             }
@@ -51,7 +52,7 @@ namespace BulkyBook.Controllers
             {
                 return NotFound();
             }
-            var obj = _context.Categories.Find(id);
+            var obj = _context.Category.GetFirstOrDefault(c => c.Id == id);
             if (obj == null)
             {
                 return NotFound();
@@ -66,8 +67,8 @@ namespace BulkyBook.Controllers
         {
             if (ModelState.IsValid)
             {
-                _context.Categories.Update(obj);
-                _context.SaveChanges();
+                _context.Category.Update(obj);
+                _context.Save();
                 TempData["success"] = "Category Edited";
 
                 return RedirectToAction("Index", "Category");
@@ -82,7 +83,7 @@ namespace BulkyBook.Controllers
             {
                 return NotFound();
             }
-            var obj = _context.Categories.Find(id);
+            var obj = _context.Category.GetFirstOrDefault(u=>u.Id == id);
             if (obj == null)
             {
                 return NotFound();
@@ -97,11 +98,11 @@ namespace BulkyBook.Controllers
         public IActionResult Delete(Category obj)
         {
             
-                _context.Categories.Remove(obj);
-                _context.SaveChanges();
-            TempData["success"] = "Category deleted";
+                _context.Category.Remove(obj);
+                _context.Save();
+                TempData["success"] = "Category created";
 
-            return RedirectToAction("Index", "Category");
+                return RedirectToAction("Index", "Category");
             
             
         }
