@@ -2,6 +2,7 @@
 using BulkyBook.Data.Repository.IRepository;
 using BulkyBook.Models;
 using BulkyBook.ViewModels;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -12,10 +13,12 @@ namespace BulkyBook.Controllers
     public class ProductController : Controller
     {
         private readonly IUnitOfWork _context;
+        private readonly IWebHostEnvironment _hostEnviroment;
 
-        public ProductController(IUnitOfWork context)
+        public ProductController(IUnitOfWork context, IWebHostEnvironment hostEnviroment)
         {
             _context = context;
+            _hostEnviroment = hostEnviroment;
         }
 
         public IActionResult Index()
@@ -27,7 +30,7 @@ namespace BulkyBook.Controllers
 
 
 
-        //get edit
+        
         public IActionResult Upsert(int? id)
         {
             ProductVM productVM = new ProductVM()
@@ -59,14 +62,27 @@ namespace BulkyBook.Controllers
 
             return View(productVM);
         }
-        //post edit
+        //post Upsert
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Edit(Product obj)
+        public IActionResult Upsert(ProductVM obj, IFormFile? file)
         {
             if (ModelState.IsValid)
             {
-                _context.Product.Update(obj);
+                string wwwRootPath = _hostEnviroment.WebRootPath;
+                if(file != null)
+                {
+                    string fileName= Guid.NewGuid().ToString();
+                    var uploads = Path.Combine(wwwRootPath, @"Images\Products");
+                    var extension= Path.GetExtension(file.FileName);
+                    using (var fileStreams = new FileStream(Path.Combine(uploads, fileName + extension), FileMode.Create))
+                    {
+                        file.CopyTo(fileStreams);
+                    }
+                    obj.Product.ImageUrl = @"\Images\Products\" + fileName + extension;
+                }
+                _context.Product.Add(obj.Product);
+              
                 _context.Save();
                 TempData["success"] = "Product Edited";
 
