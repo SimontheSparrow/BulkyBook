@@ -23,13 +23,12 @@ namespace BulkyBook.Controllers
 
         public IActionResult Index()
         {
-            var objList = _context.Product.GetAll();
-            return View(objList);
+            return View();
         }
 
 
 
-
+        //get upsert
         
         public IActionResult Upsert(int? id)
         {
@@ -56,11 +55,12 @@ namespace BulkyBook.Controllers
             }
             else
             {
+                productVM.Product= _context.Product.GetFirstOrDefault(i => i.Id == id);
+                return View(productVM);
 
             }
-          
 
-            return View(productVM);
+
         }
         //post Upsert
         [HttpPost]
@@ -75,11 +75,28 @@ namespace BulkyBook.Controllers
                     string fileName= Guid.NewGuid().ToString();
                     var uploads = Path.Combine(wwwRootPath, @"Images\Products");
                     var extension= Path.GetExtension(file.FileName);
+
+                    if(obj.Product.ImageUrl != null)
+                    {
+                        var oldImgPath= Path.Combine(wwwRootPath, obj.Product.ImageUrl.TrimStart('\\'));
+                        if (System.IO.File.Exists(oldImgPath))
+                        {
+                            System.IO.File.Delete(oldImgPath);
+                        }
+                    }
                     using (var fileStreams = new FileStream(Path.Combine(uploads, fileName + extension), FileMode.Create))
                     {
                         file.CopyTo(fileStreams);
                     }
                     obj.Product.ImageUrl = @"\Images\Products\" + fileName + extension;
+                }
+                if (obj.Product.Id == 0)
+                {
+                    _context.Product.Add(obj.Product);
+                }
+                else
+                {
+                    _context.Product.Update(obj.Product);
                 }
                 _context.Product.Add(obj.Product);
               
@@ -92,34 +109,46 @@ namespace BulkyBook.Controllers
         }
 
         //get delete
-       /* public IActionResult Delete(int? id)
-        {
-            if (id == null || id == 0)
-            {
-                return NotFound();
-            }
-            var obj = _context.Product.GetFirstOrDefault(u => u.Id == id);
-            if (obj == null)
-            {
-                return NotFound();
-            }
+        /* public IActionResult Delete(int? id)
+         {
+             if (id == null || id == 0)
+             {
+                 return NotFound();
+             }
+             var obj = _context.Product.GetFirstOrDefault(u => u.Id == id);
+             if (obj == null)
+             {
+                 return NotFound();
+             }
 
-            return View(obj);
+             return View(obj);
+         }
+
+         //post delete
+         [HttpPost]
+
+         public IActionResult Delete(Product obj)
+         {
+
+                 _context.Product.Remove(obj);
+                 _context.Save();
+                 TempData["success"] = "Product created";
+
+                 return RedirectToAction("Index", "Product");
+
+
+         }*/
+
+
+        #region API CALLS
+        [HttpGet]
+        public IActionResult GetAll()
+        {
+            var objList = _context.Product.GetAll(includeProperties:"Category");
+            return Json(new { data= objList });
+
         }
 
-        //post delete
-        [HttpPost]
-        
-        public IActionResult Delete(Product obj)
-        {
-            
-                _context.Product.Remove(obj);
-                _context.Save();
-                TempData["success"] = "Product created";
-
-                return RedirectToAction("Index", "Product");
-            
-            
-        }*/
+        #endregion
     }
 }

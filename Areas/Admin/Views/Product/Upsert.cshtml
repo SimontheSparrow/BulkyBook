@@ -4,8 +4,10 @@
 <hr />
 <div class="container">
     <h2 class="text-primary">@(Model.Product.Id!=0?"Update": "Create")  </h2>
-
+    
     <form asp-action="Upsert" method="post" asp-controller="Product" enctype="multipart/form-data">
+        <input asp-for="Product.Id" hidden />
+    <input asp-for="Product.ImageUrl" hidden />
         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
         <input type="hidden" asp-for="Product.Id" />
         <div class="form-group">
